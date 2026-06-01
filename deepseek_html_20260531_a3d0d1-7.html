@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>全等直角三角形 · 拼正方形挑战</title>
+    <style>
+        * {
+            user-select: none;
+            box-sizing: border-box;
+        }
+        body {
+            background: linear-gradient(145deg, #1e4a2f 0%, #0f2e1d 100%);
+            font-family: 'Segoe UI', 'Roboto', 'Noto Sans', system-ui, sans-serif;
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .game-container {
+            max-width: 1600px;
+            width: 100%;
+            background: rgba(255, 248, 225, 0.95);
+            border-radius: 2.5rem;
+            box-shadow: 0 25px 45px rgba(0, 0, 0, 0.3), inset 0 1px 2px rgba(255,255,255,0.5);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            backdrop-filter: blur(2px);
+        }
+        .title-section {
+            text-align: center;
+            padding: 1rem 1.5rem 0.8rem 1.5rem;
+            border-bottom: 2px solid #e9c89180;
+        }
+        h1 {
+            font-size: 1.9rem;
+            margin: 0 0 0.3rem 0;
+            color: #f9e7c2;
+            text-shadow: 3px 3px 0 #2b5e2b;
+            letter-spacing: 2px;
+        }
+        .sub {
+            color: #fff0cc;
+            background: #3c6e2faa;
+            display: inline-block;
+            padding: 5px 20px;
+            border-radius: 60px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            backdrop-filter: blur(2px);
+        }
+        .main-layout {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0;
+            flex: 1;
+            align-items: stretch;
+        }
+        .puzzle-area {
+            flex: 0 0 60%;
+            background: #fef3da;
+            padding: 1.2rem;
+            display: flex;
+            flex-direction: column;
+        }
+        .canvas-wrapper {
+            background: #e8dcc0;
+            border-radius: 24px;
+            box-shadow: inset 0 0 0 2px #fff6e5, 0 10px 20px rgba(0,0,0,0.2);
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+        }
+        canvas {
+            display: block;
+            width: 100%;
+            height: auto;
+            background: #e8dcc0;
+            border-radius: 20px;
+            cursor: grab;
+            touch-action: none;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+        canvas:active { cursor: grabbing; }
+        .reset-btn-wrapper {
+            margin-top: 16px;
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+        }
+        button {
+            background: #d9a13b;
+            border: none;
+            color: #2d2b1f;
+            font-weight: bold;
+            padding: 8px 24px;
+            border-radius: 60px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: 0.2s;
+            box-shadow: 0 3px 0 #7a4c1a;
+            font-family: inherit;
+        }
+        button:active {
+            transform: translateY(2px);
+            box-shadow: 0 1px 0 #7a4c1a;
+        }
+        .reset-btn { background: #5f8b4c; color: white; box-shadow: 0 3px 0 #2b4a1a; }
+        .check-btn { background: #2d6a4f; color: white; }
+        .info-area {
+            flex: 0 0 40%;
+            background: #fff3e0;
+            padding: 1.2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.2rem;
+            border-left: 2px solid #ecd7a8;
+        }
+        .info-card {
+            background: #5f3b1c;
+            border-radius: 1.5rem;
+            padding: 14px;
+            color: #ffefcf;
+            text-align: center;
+            box-shadow: 0 6px 12px rgba(0,0,0,0.1);
+        }
+        .info-card p { margin: 6px 0; font-size: 0.9rem; line-height: 1.4; }
+        .tip {
+            background: #e9c891;
+            border-radius: 1.2rem;
+            padding: 14px;
+            font-size: 0.82rem;
+            color: #3a2a15;
+            text-align: center;
+            box-shadow: inset 0 1px 3px #ffeecc, 0 4px 8px rgba(0,0,0,0.05);
+        }
+        .tip p { margin: 6px 0; }
+        .piece-status {
+            background: #f2e0b0;
+            border-radius: 1.2rem;
+            padding: 14px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            text-align: center;
+            transition: all 0.2s;
+            box-shadow: inset 0 0 0 1px #fff9e8, 0 4px 8px rgba(0,0,0,0.05);
+        }
+        .status-success {
+            background: #b3d9a0;
+            color: #1c481c;
+            box-shadow: 0 0 0 2px gold;
+        }
+        @media (max-width: 1000px) {
+            .main-layout { flex-direction: column; }
+            .puzzle-area, .info-area { flex: 0 0 auto; width: 100%; }
+            .info-area { border-left: none; border-top: 2px solid #ecd7a8; }
+        }
+    </style>
+</head>
+<body>
+<div class="game-container">
+    <div class="title-section">
+        <h1>🧩 全等直角三角形 · 拼正方形挑战 🧩</h1>
+        <div class="sub">✨ 四个全等直角三角形 → 拼成大正方形 | 拖拽移动 | 点击旋转90° | 自动吸附对齐 ✨</div>
+    </div>
+    <div class="main-layout">
+        <div class="puzzle-area">
+            <div class="canvas-wrapper">
+                <canvas id="puzzleCanvas" width="1400" height="780" style="width:100%; height:auto; aspect-ratio:1400/780"></canvas>
+            </div>
+            <div class="reset-btn-wrapper">
+                <button id="resetBtn" class="reset-btn">🔄 重置所有三角形</button>
+                <button id="forceCheckBtn" class="check-btn">🔍 检测拼合状态</button>
+            </div>
+        </div>
+        <div class="info-area">
+            <div class="info-card">
+                <p>🎯 <strong>目标：四个全等直角三角形 → 拼成一个大正方形</strong></p>
+                <p>📐 三边颜色不同 (橙/绿/蓝) | 直角符号(└)标记</p>
+                <p>💡 支持两种经典拼法：直角顶点在外 / 斜边端点在外</p>
+            </div>
+            <div class="tip">
+                <p>✨ <strong>交互说明</strong> ✨</p>
+                <p>• <strong>拖拽</strong>三角形自由移动位置</p>
+                <p>• <strong>点击</strong>三角形内部 → 顺时针旋转90°</p>
+                <p>• 移动/旋转时 <strong>自动吸附</strong> 临近顶点 & 边缘</p>
+                <p>✅ <strong>成功条件：蓝色斜边的外顶点构成近似正方形</strong></p>
+            </div>
+            <div class="piece-status" id="statusMsg">
+                🟡 将四个三角形拼成一个大正方形即可！
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    (function(){
+        // 三角形几何参数
+        const LEG_A = 96;
+        const LEG_B = 128;
+        const baseV0 = { x: 0, y: 0 };
+        const baseV1 = { x: LEG_B, y: 0 };
+        const baseV2 = { x: 0, y: LEG_A };
+        
+        function getCentroidOfBase() {
+            return { x: (baseV0.x + baseV1.x + baseV2.x) / 3, y: (baseV0.y + baseV1.y + baseV2.y) / 3 };
+        }
+        const baseCentroid = getCentroidOfBase();
+        
+        function computeWorldVertices(tri) {
+            const cx = tri.cx, cy = tri.cy;
+            const angleRad = tri.angle * Math.PI / 180;
+            const cos = Math.cos(angleRad);
+            const sin = Math.sin(angleRad);
+            const transform = (p) => {
+                const dx = p.x - baseCentroid.x;
+                const dy = p.y - baseCentroid.y;
+                return {
+                    x: cx + dx * cos - dy * sin,
+                    y: cy + dx * sin + dy * cos
+                };
+            };
+            return { v0: transform(baseV0), v1: transform(baseV1), v2: transform(baseV2) };
+        }
+        
+        function updateAllVertices() {
+            for(let tri of triangles) tri.verts = computeWorldVertices(tri);
+        }
+        
+        const canvas = document.getElementById('puzzleCanvas');
+        const ctx = canvas.getContext('2d');
+        const canvasWidth = 1400, canvasHeight = 780;
+        canvas.width = canvasWidth; canvas.height = canvasHeight;
+        
+        const TARGET_SIDE = (LEG_A + LEG_B) * 6; // 1344px (仅用于绘制参考框)
+        const TARGET_X = canvasWidth - TARGET_SIDE - 20;
+        const TARGET_Y = (canvasHeight - TARGET_SIDE) / 2;
+        
+        let triangles = [];
+        function initFourTriangles() {
+            const newTriangles = [];
+            const startX = 130, startY_base = 100, stepY = 135;
+            for(let i = 0; i < 4; i++) {
+                newTriangles.push({ id: i, cx: startX, cy: startY_base + i * stepY, angle: 0, verts: null });
+            }
+            return newTriangles;
+        }
+        triangles = initFourTriangles();
+        
+        // 吸附系统
+        const SNAP_DIST = 22;
+        function applySnapToTriangle(movingTri, others, finalApply = true) {
+            let bestDelta = null, bestDist = SNAP_DIST;
+            const mv = movingTri.verts, movingPoints = [mv.v0, mv.v1, mv.v2];
+            for(let other of others) {
+                if(other.id === movingTri.id) continue;
+                const ov = other.verts, otherPoints = [ov.v0, ov.v1, ov.v2];
+                for(let mp of movingPoints) {
+                    for(let op of otherPoints) {
+                        const dx = mp.x - op.x, dy = mp.y - op.y, dist = Math.hypot(dx, dy);
+                        if(dist < bestDist) { bestDist = dist; bestDelta = { dx: -dx, dy: -dy }; }
+                    }
+                }
+            }
+            if(bestDelta && finalApply) {
+                movingTri.cx += bestDelta.dx; movingTri.cy += bestDelta.dy;
+                movingTri.verts = computeWorldVertices(movingTri);
+                return true;
+            }
+            return !!bestDelta;
+        }
+        function iterativeSnap(movingTri, others) {
+            let snapped = false;
+            for(let iter=0;iter<4;iter++) if(applySnapToTriangle(movingTri, others, true)) snapped = true; else break;
+            return snapped;
+        }
+        function afterMoveSnap(id) {
+            const moving = triangles.find(t=>t.id===id);
+            if(moving) { iterativeSnap(moving, triangles); updateAllVertices(); drawAll(); }
+        }
+        
+        function rotateTriangle(tri) {
+            tri.angle = (tri.angle + 90) % 360;
+            tri.verts = computeWorldVertices(tri);
+            iterativeSnap(tri, triangles);
+            updateAllVertices();
+            updateSuccessByOutline();
+            drawAll();
+        }
+        
+        // =============== 最终稳定检测：只要求蓝色斜边的外顶点构成近似正方形 ===============
+        function isSquareSuccess() {
+            let endpoints = [];
+            for(let tri of triangles) {
+                if(tri.verts) {
+                    endpoints.push(tri.verts.v1, tri.verts.v2);
+                }
+            }
+            let unique = [];
+            for(let p of endpoints) {
+                let found = false;
+                for(let u of unique) {
+                    if(Math.hypot(u.x - p.x, u.y - p.y) < 25) {
+                        found = true;
+                        break;
+                    }
+                }
+                if(!found) unique.push(p);
+            }
+            if(unique.length < 4) return false;
+            
+            let center = { x: 0, y: 0 };
+            for(let p of unique) {
+                center.x += p.x;
+                center.y += p.y;
+            }
+            center.x /= unique.length;
+            center.y /= unique.length;
+            
+            let sorted = [...unique];
+            sorted.sort((a, b) => {
+                let da = Math.hypot(a.x - center.x, a.y - center.y);
+                let db = Math.hypot(b.x - center.x, b.y - center.y);
+                return db - da;
+            });
+            let outer = sorted.slice(0, 4);
+            
+            let dists = [];
+            for(let i=0;i<4;i++) {
+                for(let j=i+1;j<4;j++) {
+                    dists.push(Math.hypot(outer[i].x - outer[j].x, outer[i].y - outer[j].y));
+                }
+            }
+            dists.sort((a,b) => a - b);
+            let maxSide = dists[3];
+            let minSide = dists[0];
+            return (maxSide - minSide) < 30;
+        }
+        
+        // 全局成功标记 & 印章
+        let classicSuccess = false;
+        let redSealVisible = false;
+        let redSealTimeout = null;
+        const SEAL_WIDTH = LEG_A;
+        
+        function drawRedSeal() {
+            if (!redSealVisible) return;
+            ctx.save();
+            const sealX = TARGET_X + TARGET_SIDE - SEAL_WIDTH - 20;
+            const sealY = TARGET_Y + 55;
+            const radius = SEAL_WIDTH * 0.5;
+            ctx.shadowBlur = 0;
+            ctx.beginPath();
+            ctx.arc(sealX, sealY, radius+4, 0, 2*Math.PI);
+            ctx.fillStyle = "#aa2e2eee";
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(sealX, sealY, radius, 0, 2*Math.PI);
+            ctx.fillStyle = "#e74c3cee";
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(sealX, sealY, radius-6, 0, 2*Math.PI);
+            ctx.fillStyle = "#c0392bdd";
+            ctx.fill();
+            ctx.font = `bold ${Math.floor(SEAL_WIDTH * 0.22)}px 'Segoe UI', 'KaiTi', 'Microsoft YaHei'`;
+            ctx.fillStyle = "#FFEC80";
+            ctx.shadowBlur = 2;
+            ctx.shadowColor = "#5a1e1e";
+            ctx.textAlign = "center";
+            ctx.fillText("拼合正方形", sealX, sealY - 10);
+            ctx.font = `bold ${Math.floor(SEAL_WIDTH * 0.26)}px 'Segoe UI', 'KaiTi'`;
+            ctx.fillStyle = "#FFD966";
+            ctx.fillText("成功", sealX, sealY + 22);
+            ctx.textAlign = "left";
+            ctx.restore();
+        }
+        
+        // 在画布右上方绘制酱红色成功文字（字号放大为两倍 56px，文字内容更新）
+        function drawSuccessTextOnCanvas() {
+            if (!classicSuccess) return;
+            ctx.save();
+            // 位置：画布右上方（根据大字号调整位置，确保完整显示）
+            const textX = canvasWidth - 380;
+            const textY = 70;
+            
+            ctx.font = "bold 56px 'Segoe UI', 'KaiTi', 'Microsoft YaHei'";
+            ctx.fillStyle = "#9b2e2e";
+            ctx.shadowBlur = 4;
+            ctx.shadowColor = "#d4a373";
+            ctx.textAlign = "center";
+            ctx.fillText("🏆 恭喜你，成功拼成正方形！ 🏆", textX, textY);
+            ctx.restore();
+        }
+        
+        function updateSuccessByOutline() {
+            const isSuccess = isSquareSuccess();
+            if (isSuccess) {
+                if (!classicSuccess) {
+                    classicSuccess = true;
+                    // 右侧信息栏显示成功文字
+                    document.getElementById('statusMsg').innerHTML = "🏆 恭喜你，成功拼成正方形！ 🏆";
+                    document.getElementById('statusMsg').classList.add('status-success');
+                }
+                if (redSealTimeout) clearTimeout(redSealTimeout);
+                redSealVisible = true;
+                redSealTimeout = setTimeout(() => {
+                    redSealVisible = false;
+                    drawAll();
+                }, 2800);
+                drawAll();
+            } else {
+                if (classicSuccess) {
+                    classicSuccess = false;
+                    document.getElementById('statusMsg').classList.remove('status-success');
+                    document.getElementById('statusMsg').innerHTML = "🔍 拼合尚未完成，请让蓝色斜边构成近似正方形。";
+                }
+                if (redSealVisible) {
+                    redSealVisible = false;
+                    if (redSealTimeout) clearTimeout(redSealTimeout);
+                    drawAll();
+                }
+            }
+            return isSuccess;
+        }
+        
+        function resetGame() {
+            triangles = initFourTriangles();
+            updateAllVertices();
+            classicSuccess = false;
+            redSealVisible = false;
+            if (redSealTimeout) clearTimeout(redSealTimeout);
+            document.getElementById('statusMsg').innerHTML = "🟢 已重置，拼出任意大小的正方形即可成功！";
+            document.getElementById('statusMsg').classList.remove('status-success');
+            drawAll();
+        }
+        
+        function forceCheck() {
+            updateSuccessByOutline();
+            drawAll();
+        }
+        
+        // 绘图函数
+        function drawGridAndTarget() {
+            ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+            ctx.save();
+            ctx.strokeStyle = "#cbbf9a";
+            ctx.lineWidth = 0.6;
+            for(let i=0;i<canvasWidth;i+=50){ ctx.beginPath(); ctx.moveTo(i,0); ctx.lineTo(i,canvasHeight); ctx.stroke(); }
+            for(let i=0;i<canvasHeight;i+=50){ ctx.beginPath(); ctx.moveTo(0,i); ctx.lineTo(canvasWidth,i); ctx.stroke(); }
+            ctx.setLineDash([12,16]);
+            ctx.strokeStyle = "#daa520";
+            ctx.lineWidth = 5;
+            ctx.strokeRect(TARGET_X, TARGET_Y, TARGET_SIDE, TARGET_SIDE);
+            ctx.setLineDash([]);
+            ctx.fillStyle = "#faf0cf50";
+            ctx.fillRect(TARGET_X, TARGET_Y, TARGET_SIDE, TARGET_SIDE);
+            ctx.fillStyle = "#8b6946";
+            ctx.font = "bold 16px 'Segoe UI'";
+            ctx.fillText("⭐ 参考区域 (不强制对齐) ⭐", TARGET_X+12, TARGET_Y-8);
+            ctx.restore();
+        }
+        
+        function drawRightAngleMark(tri) {
+            const verts = tri.verts;
+            if(!verts) return;
+            const corner = verts.v0;
+            const edge1 = { x: verts.v1.x - verts.v0.x, y: verts.v1.y - verts.v0.y };
+            const edge2 = { x: verts.v2.x - verts.v0.x, y: verts.v2.y - verts.v0.y };
+            const len1 = Math.hypot(edge1.x, edge1.y);
+            const len2 = Math.hypot(edge2.x, edge2.y);
+            if(len1<0.1||len2<0.1) return;
+            const dir1 = { x: edge1.x/len1, y: edge1.y/len1 };
+            const dir2 = { x: edge2.x/len2, y: edge2.y/len2 };
+            const markLen = 20;
+            const p1 = { x: corner.x + dir1.x*markLen, y: corner.y + dir1.y*markLen };
+            const p2 = { x: corner.x + dir2.x*markLen, y: corner.y + dir2.y*markLen };
+            const cornerExt = { x: p1.x + dir2.x*markLen, y: p1.y + dir2.y*markLen };
+            ctx.beginPath();
+            ctx.moveTo(p1.x, p1.y);
+            ctx.lineTo(cornerExt.x, cornerExt.y);
+            ctx.lineTo(p2.x, p2.y);
+            ctx.lineWidth = 3;
+            ctx.strokeStyle = "#C44B2C";
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.arc(corner.x, corner.y, 5, 0, 2*Math.PI);
+            ctx.fillStyle = "#c97d3e";
+            ctx.fill();
+        }
+        
+        function drawTriangle(tri, isHighlight=false) {
+            const verts = tri.verts;
+            if(!verts) return;
+            ctx.beginPath();
+            ctx.moveTo(verts.v0.x, verts.v0.y);
+            ctx.lineTo(verts.v1.x, verts.v1.y);
+            ctx.lineTo(verts.v2.x, verts.v2.y);
+            ctx.closePath();
+            ctx.fillStyle = isHighlight ? "rgba(230,210,150,0.85)" : "rgba(250,240,180,0.75)";
+            ctx.fill();
+            ctx.strokeStyle = "#b87c3a";
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(verts.v0.x, verts.v0.y); ctx.lineTo(verts.v1.x, verts.v1.y);
+            ctx.strokeStyle = "#E67E22"; ctx.lineWidth = 3.5; ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(verts.v0.x, verts.v0.y); ctx.lineTo(verts.v2.x, verts.v2.y);
+            ctx.strokeStyle = "#2ECC71"; ctx.lineWidth = 3.5; ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(verts.v1.x, verts.v1.y); ctx.lineTo(verts.v2.x, verts.v2.y);
+            ctx.strokeStyle = "#3498DB"; ctx.lineWidth = 3.5; ctx.stroke();
+            drawRightAngleMark(tri);
+        }
+        
+        let selectedTempId = null;
+        function drawAll() {
+            drawGridAndTarget();
+            for(let tri of triangles) drawTriangle(tri, selectedTempId === tri.id);
+            drawRedSeal();
+            drawSuccessTextOnCanvas();  // 在画布右上方绘制放大两倍的成功文字
+        }
+        
+        // 交互事件
+        let dragTargetTri = null, dragStartMouse={x:0,y:0}, dragStartCenter={x:0,y:0}, hasDragged=false;
+        function getCanvasCoords(e) {
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width/rect.width, scaleY = canvas.height/rect.height;
+            let clientX, clientY;
+            if(e.touches) { clientX = e.touches[0].clientX; clientY = e.touches[0].clientY; }
+            else { clientX = e.clientX; clientY = e.clientY; }
+            let x = (clientX - rect.left)*scaleX, y = (clientY - rect.top)*scaleY;
+            return { x: Math.min(Math.max(x,0),canvas.width), y: Math.min(Math.max(y,0),canvas.height) };
+        }
+        function pointInTriangle(px,py,tri) {
+            const v = tri.verts;
+            const sign = (p1,p2,p3) => (p1.x-p3.x)*(p2.y-p3.y) - (p2.x-p3.x)*(p1.y-p3.y);
+            const d1 = sign({x:px,y:py}, v.v0, v.v1);
+            const d2 = sign({x:px,y:py}, v.v1, v.v2);
+            const d3 = sign({x:px,y:py}, v.v2, v.v0);
+            const neg = (d1<0)||(d2<0)||(d3<0);
+            const pos = (d1>0)||(d2>0)||(d3>0);
+            return !(neg && pos);
+        }
+        function getTriangleAt(mx,my) {
+            for(let i=triangles.length-1;i>=0;i--) if(pointInTriangle(mx,my,triangles[i])) return triangles[i];
+            return null;
+        }
+        function onPointerStart(e) {
+            e.preventDefault();
+            const coord = getCanvasCoords(e);
+            const tri = getTriangleAt(coord.x, coord.y);
+            if(tri) {
+                dragTargetTri = tri;
+                dragStartMouse = coord;
+                dragStartCenter = { x: tri.cx, y: tri.cy };
+                hasDragged = false;
+                canvas.style.cursor = 'grabbing';
+                selectedTempId = tri.id;
+                drawAll();
+            } else { dragTargetTri = null; selectedTempId = null; drawAll(); }
+        }
+        function onPointerMove(e) {
+            if(!dragTargetTri) return;
+            e.preventDefault();
+            const coord = getCanvasCoords(e);
+            const dx = coord.x-dragStartMouse.x, dy = coord.y-dragStartMouse.y;
+            if(Math.hypot(dx,dy)>5) hasDragged=true;
+            dragTargetTri.cx = dragStartCenter.x+dx;
+            dragTargetTri.cy = dragStartCenter.y+dy;
+            dragTargetTri.cx = Math.min(Math.max(dragTargetTri.cx,30),canvas.width-30);
+            dragTargetTri.cy = Math.min(Math.max(dragTargetTri.cy,30),canvas.height-30);
+            dragTargetTri.verts = computeWorldVertices(dragTargetTri);
+            afterMoveSnap(dragTargetTri.id);
+            updateSuccessByOutline();
+            drawAll();
+        }
+        function onPointerEnd(e) {
+            if(dragTargetTri && !hasDragged) {
+                rotateTriangle(dragTargetTri);
+                updateSuccessByOutline();
+                drawAll();
+            } else if(dragTargetTri && hasDragged) {
+                updateSuccessByOutline();
+                drawAll();
+            }
+            dragTargetTri = null; hasDragged=false; selectedTempId=null;
+            canvas.style.cursor='grab';
+            drawAll();
+        }
+        
+        canvas.addEventListener('mousedown',onPointerStart);
+        window.addEventListener('mousemove',onPointerMove);
+        window.addEventListener('mouseup',onPointerEnd);
+        canvas.addEventListener('touchstart',onPointerStart,{passive:false});
+        window.addEventListener('touchmove',onPointerMove,{passive:false});
+        window.addEventListener('touchend',onPointerEnd);
+        canvas.style.cursor='grab';
+        
+        document.getElementById('resetBtn').addEventListener('click',()=>resetGame());
+        document.getElementById('forceCheckBtn').addEventListener('click',()=>forceCheck());
+        
+        updateAllVertices();
+        drawAll();
+        classicSuccess = false;
+        redSealVisible = false;
+    })();
+</script>
+</body>
+</html>
